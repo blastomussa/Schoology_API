@@ -71,7 +71,7 @@ def get_inactiveUsers():
     return user_jsons
 
 
-
+# FAILED TESTS; might be put_request() thats broken...no idea
 def update_user(id,field_json):
     api_call = "https://api.schoology.com/v1/users/" + str(id)
 
@@ -79,31 +79,30 @@ def update_user(id,field_json):
     return user_json
 
 
-
+# PASSED TEST
 def get_roles():
-    api_call = ''
+    api_call = 'https://api.schoology.com/v1/roles'
+    json_data = get_request(api_call)
+    role_jsons = json_data['role']
+    return role_jsons
 
-    roles_json = get_request(api_call)
-    return roles_json
 
-
-
+# PASSED TEST
 def get_role(role_id):
-    api_call = ''
-
+    api_call = 'https://api.schoology.com/v1/roles/' + str(role_id)
     role_json = get_request(api_call)
     return role_json
 
 
-
+# PASSED TEST
 def get_school():
-    api_call = ''
-
-    school_json = get_request(api_call)
+    api_call = "https://api.schoology.com/v1/schools"
+    json_data = get_request(api_call)
+    school_json = json_data['school']
     return school_json
 
 
-
+# PASSED TEST
 def create_user(user_json):
     api_call = "https://api.schoology.com/v1/users"
 
@@ -119,19 +118,35 @@ def delete_user(id):
     return json_data
 
 
-# --------->>> I need to test parent associations POST
-def create_parentAssociation(parent_json):
-    api_call = ''
+# PASSED TEST
+def create_parentAssociation(association_json):
+    api_call = "https://api.schoology.com/v1/users/import/associations/parents"
 
-    json_data = get_request(api_call)
+    json_data = post_request(api_call,association_json)
+    if(json_data == ""): json_data = "Association failed..check json"
     return json_data
 
 
-# test call
-def test():
-  pass
+# PASSED TEST
+# takes email as arg and returns Schoology ID if found
+def get_userID(email):
+    users = get_users()
+    id = ""
+    for user in users:
+        if(user['primary_email'] == email):
+            id = user['id']
+    if(id == ""): id = "No Schoology ID found for: " + email
+    return id
 
 
-
-if __name__ == '__main__':
-    test()
+# PASSED TEST
+# get school user id
+# add id as optional arg
+def get_userSUID(email):
+    users = get_users()
+    school_uid = ""
+    for user in users:
+        if(user['primary_email'] == email):
+            school_uid = user['school_uid']
+    if(school_uid == ""): school_uid = "No School ID found for: " + email
+    return school_uid
