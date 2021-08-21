@@ -11,10 +11,8 @@ import time
 import oauth2
 import requests
 import configparser
-import urllib.parse
-import urllib.request
+from requests.exceptions import ConnectionError
 
-# ----------->> ADD NO CONNECTION ERROR HANDLING
 # Get API key and secret from config file
 try:
     config = configparser.ConfigParser()
@@ -62,7 +60,10 @@ def get_request(api_call):
     signed_url = authorize(api_call,method)
 
     # make request and read data
-    d = requests.get(signed_url)
+    try:
+        d = requests.get(signed_url)
+    except ConnectionError as e:
+        exit(1)
     data = d.text
 
     # 404 Error Handling
@@ -82,7 +83,10 @@ def post_request(api_call,dict):
     signed_url = authorize(api_call,method)
 
     # make request and read data
-    d = requests.post(signed_url,json=dict)
+    try:
+        d = requests.post(signed_url,json=dict)
+    except ConnectionError as e:
+        exit(1)
     data = d.text
 
     # create json dictionary and return
@@ -98,7 +102,10 @@ def put_request(api_call,dict):
     signed_url = authorize(api_call,method)
 
     # make request and read data
-    d = requests.put(signed_url,data=dict)
+    try:
+        d = requests.put(signed_url,json=dict)
+    except ConnectionError as e:
+        exit(1)
     data = d.text
 
     # create json dictionary and return
@@ -117,7 +124,10 @@ def delete_request(api_call):
     signed_url = authorize(api_call,method)
 
     # make request and read data
-    d = requests.delete(signed_url)
+    try:
+        d = requests.delete(signed_url)
+    except ConnectionError as e:
+        exit(1)
     data = d.text
 
     # create json dictionary and return
