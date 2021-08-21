@@ -6,7 +6,6 @@ from api_requests import *
 # PASSED TEST
 def get_user(id):
     api_call = "https://api.schoology.com/v1/users/" + str(id)
-
     user_json = get_request(api_call)
     return user_json
 
@@ -30,7 +29,7 @@ def get_users(role_id=""):
         # create list of user jsons
         user_jsons = json_data['user']
 
-        # parse for next page... .update() on dict to join?
+        # parse for next page
         links = json_data['links']
         try:
             while(links['next'] != ''):
@@ -41,6 +40,7 @@ def get_users(role_id=""):
                 # append paginated results to users json
                 u = json_data['user']
                 user_jsons = user_jsons + u
+        # no next page will throw KeyError
         except KeyError:
             pass
 
@@ -50,11 +50,10 @@ def get_users(role_id=""):
 # PASSED TEST
 def get_inactiveUsers():
     api_call = "https://api.schoology.com/v1/users/inactive"
-
     json_data = get_request(api_call)
     user_jsons = json_data['user']
 
-    # parse for next page... .update() on dict to join?
+    # parse for next page
     links = json_data['links']
     try:
         while(links['next'] != ''):
@@ -71,10 +70,9 @@ def get_inactiveUsers():
     return user_jsons
 
 
-# FAILED TESTS; might be put_request() thats broken...no idea
+#PASSED TEST
 def update_user(id,field_json):
     api_call = "https://api.schoology.com/v1/users/" + str(id)
-
     user_json = put_request(api_call,field_json)
     return user_json
 
@@ -105,7 +103,6 @@ def get_school():
 # PASSED TEST
 def create_user(user_json):
     api_call = "https://api.schoology.com/v1/users"
-
     user_json = post_request(api_call,user_json)
     return user_json
 
@@ -113,7 +110,6 @@ def create_user(user_json):
 # PASSED TEST
 def delete_user(id):
     api_call = 'https://api.schoology.com/v1/users/' + str(id) + "&email_notification=1"
-
     json_data = delete_request(api_call)
     return json_data
 
@@ -121,7 +117,6 @@ def delete_user(id):
 # PASSED TEST
 def create_parentAssociation(association_json):
     api_call = "https://api.schoology.com/v1/users/import/associations/parents"
-
     json_data = post_request(api_call,association_json)
     if(json_data == ""): json_data = "Association failed..check json"
     return json_data
@@ -135,18 +130,20 @@ def get_userID(email):
     for user in users:
         if(user['primary_email'] == email):
             id = user['id']
+            break
     if(id == ""): id = "No Schoology ID found for: " + email
     return id
 
 
 # PASSED TEST
 # get school user id
-# add id as optional arg
+# ADD id as optional arg
 def get_userSUID(email):
     users = get_users()
     school_uid = ""
     for user in users:
         if(user['primary_email'] == email):
             school_uid = user['school_uid']
+            break
     if(school_uid == ""): school_uid = "No School ID found for: " + email
     return school_uid
