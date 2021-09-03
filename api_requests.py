@@ -11,8 +11,12 @@ import time
 import oauth2
 import requests
 import configparser
+from json import JSONDecodeError
 from requests.exceptions import ConnectionError
 
+
+#------------->> CLEANUP ERROR HANDLING WITH response.status_code
+# ------------>> GET RID OF json.loads() REPLACE WITH response.json()
 # Get API key and secret from config file
 try:
     config = configparser.ConfigParser()
@@ -90,8 +94,12 @@ def post_request(api_call,dict):
     data = d.text
 
     # create json dictionary and return
-    json_data = json.loads(data)
-    return json_data
+    try:
+        json_data = json.loads(data)
+        return json_data
+    except JSONDecodeError as e:
+        pass
+
 
 
 # make PUT request, convert response to json and return json
