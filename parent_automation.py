@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # Author: Blastomussa
 # Date 8/18/2021
-# Automates parent account creation and student associations in Schoology
-# Some of this code is specific to the fields in my particular PowerSchool export 
+# Automates parent account creation and student associations in Schoology; time.sleep() statements keep app from overloading API
 import csv
 import random
 import unidecode
@@ -21,7 +20,6 @@ except KeyError:
     exit()
 
 
-# PASSED TEST
 # build parent json that can be used with create_user()
 def build_parent(parent_email,first_name,last_name):
     parent_roleID = 817463
@@ -54,14 +52,14 @@ def build_parent(parent_email,first_name,last_name):
     return user
 
 
-# PASSED TEST
 # returns nothing if failed or bad data
 # using emails is slow and only works after parent is created in Schoology
 def build_association(student_email="",parent_email="", student_suid="",parent_suid=""):
 
     if((student_suid == "") and (parent_suid == "")):
-        student_suid = get_userSUID(student_email)
-        parent_suid = get_userSUID(parent_email)
+        users = get_users()
+        student_suid = get_userSUID(student_email,users)
+        parent_suid = get_userSUID(parent_email,users)
 
     # needs to be this specific format per Schoology API docs
     # school_uid NOT uid
@@ -76,6 +74,23 @@ def build_association(student_email="",parent_email="", student_suid="",parent_s
     return association
 
 
+# create association deletion json
+def delete_association(student_suid,parent_suid):
+
+    # needs to be this specific format per Schoology API docs
+    # school_uid NOT uid
+    association = {
+        'associations':  {
+            'association': {
+                "student_school_uid" : student_suid,
+                "parent_school_uid": parent_suid,
+                "delete": 1
+            }
+        }
+    }
+    return association
+
+
 # get student dict from Schoology with email as key and school_uid as value
 def get_students():
     # build student dictionary; need school_uid for parent association json
@@ -84,6 +99,7 @@ def get_students():
     student_dict = {}
     for student in students:
         s_email = student['primary_email'].lower()
+        #print(s_email)
         s_suid = student['school_uid']
         student_dict.update({s_email:s_suid})
 
@@ -103,7 +119,6 @@ def get_parents():
     return parents_dict
 
 
-# PASSED TEST
 # get association from PS export, return list of dicts of unique parents that
 # can be used to build new users jsons
 def get_PSParents():
@@ -111,7 +126,7 @@ def get_PSParents():
     data = []
 
     # open PowerSchool export; build parent info dicts
-    with open(EXPORT, newline='') as csvfile:
+    with open(EXPORT, newline='', encoding="ISO-8859-1") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
             parent = {
@@ -142,11 +157,10 @@ def get_PSParents():
     return parents
 
 
-#PASSED TEST
 # Builds associations {student_email,parent_email} from PowerSchool export
 def get_PSassociation():
     # open and read PS export
-    with open(EXPORT, newline='') as csvfile:
+    with open(EXPORT, newline='', encoding="ISO-8859-1") as csvfile:
         reader = csv.DictReader(csvfile)
 
         PS_association = {}
@@ -159,7 +173,7 @@ def get_PSassociation():
     return PS_association
 
 
-# PASSED TEST
+# get inactive parents from Schoology
 def delete_inactiveParents():
     parent_jsons = get_PSParents()
     PS_emails = []
@@ -173,14 +187,40 @@ def delete_inactiveParents():
             id = get_userID(parent)
             d = delete_user(id)
 
-            
-# can be called for automated and scheduled parent account creation
-def main():
-    # get {student_email, school_uid} dictionary from Schoology
-    student_suids = get_students()
 
-    # get {student_email, parent_email} dictionary from PowerSchool
-    PS_associations = get_PSassociation()
+# update all PowerSchool associations in schoology
+def associate():
+    time.sleep(1)
+    users = get_users()
+
+    with open(EXPORT, newline='', encoding="ISO-8859-1") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            p_email = row['U_DEF_EXT_STUDENTS.contact1_email'].lower()
+            s_email = row['U_DEF_EXT_STUDENTS.student_email'].lower()
+            s_suid = get_userSUID(s_email,users)
+            p_suid = get_userSUID(p_email,users)
+            ass = create_parentAssociation(build_association(student_suid=s_suid,parent_suid=p_suid))
+            fields = ass['association']
+            code = fields[0]
+            if(int(code['response_code']) == 400):
+                # ------------>>>ADD ERROR LOG
+                print(p_email)
+
+            time.sleep(1)
+
+
+# one time call to create an association according to student and parent email
+def manual_association(student_email,parent_email):
+    users = get_users()
+
+    s_suid = get_userSUID(student_email,users)
+    p_suid = get_userSUID(parent_email,users)
+    print(create_parentAssociation(delete_association(student_suid=s_suid,parent_suid=p_suid)))
+
+
+# Get new parents and update parent associations in Schoology
+def main():
 
     # get {parent_email, school_uid} dictionary from Schoology
     schoology_parents = get_parents()
@@ -195,44 +235,16 @@ def main():
             p = build_parent(parent['LC_email'],parent['first_name'],parent['last_name'])
             new_parents.append(p)
 
-    # build {parent email : school_uid} dictionary from new parents
-    new_parent_suids = {}
     for parent in new_parents:
-        suid = {
-            parent['primary_email']: parent['school_uid']
-        }
-        new_parent_suids.update(suid)
+        create_user(parent)
+        time.sleep(1)
 
-    # build new associations list
-    association_jsons = []
-    for student in PS_associations:
-        try:
-            student_email = student
-            parent_email = PS_associations[student_email]
+    # update all association
+    associate()
 
-            # get school_uids from students and parents
-            # KeyError breaks before association built; only new users updated
-            student_suid = student_suids[student_email]
-            parent_suid = new_parent_suids[parent_email]
 
-            # build parent association json
-            ass_json = build_association(student_suid=student_suid,parent_suid=parent_suid)
-            association_jsons.append(ass_json)
-
-        # catches test user with no association and students with bad data
-        except KeyError:
-            print(student_email)
-            pass
-
-    # create new parents in Schoology
-    for parent in new_parents:
-       d = create_user(parent)
-
-    # create parent-student associations in schoology
-    for association in association_jsons:
-       d = create_parentAssociation(association)
-    
-    delete_inactiveParents() 
+def test():
+    pass
 
 
 if __name__ == '__main__':
