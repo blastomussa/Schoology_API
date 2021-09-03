@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 # Author: Blastomussa
 # Date 8/18/2021
-# Automates parent account creation and student associations in Schoology; time.sleep() statements keep app from overloading API
+# Automates parent account creation and student associations in Schoology
+# time.sleep() statements keep app from overloading API
+import os
 import csv
 import random
 import unidecode
@@ -241,6 +243,12 @@ def main():
 
     # update all association
     associate()
+    
+    # remove PS export 
+    if os.path.exists(EXPORT):
+        os.remove(EXPORT)
+    else:
+        print("The file does not exist")
 
 
 def test():
