@@ -7,9 +7,9 @@ from __future__ import print_function
 import base64
 import os.path
 from email.mime.text import MIMEText
-from httplib2.error import ServerNotFoundError
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from httplib2.error import ServerNotFoundError
 from email.mime.multipart import MIMEMultipart
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -60,7 +60,3 @@ class pymail:
         except(ServerNotFoundError,HttpError) as error:
             print('An error occurred: %s' % error)
 
-# TEST EMAIL
-mailer = pymail()
-mailer.create_message("recipient@gmail.com","TEST","TEST")
-mailer.send_message()
