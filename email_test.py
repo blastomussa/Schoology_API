@@ -28,7 +28,7 @@ def create_message(sender, to, subject, message_text):
     """
     emailMsg = message_text
     mimeMessage = MIMEMultipart()
-    mimeMessage['to'] = 'jcourtney@gcvs.org'
+    mimeMessage['to'] = 'recipient@gmail.com'
     mimeMessage['subject'] = subject
     mimeMessage.attach(MIMEText(emailMsg, 'plain'))
     raw_string = base64.urlsafe_b64encode(mimeMessage.as_bytes()).decode()
