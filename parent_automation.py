@@ -7,6 +7,7 @@ import os
 import csv
 import random
 import unidecode
+from pymail import *
 from api_calls import *
 
 # set PowerSchool export path
@@ -206,12 +207,22 @@ def associate():
             fields = ass['association']
             code = fields[0]
             if(int(code['response_code']) == 400):
-                # ------------>>>ADD ERROR LOG
-                print(p_email)
-
+                d = {s_email: p_email}
+                failed.append(d)
             time.sleep(1)
 
+    message = "FALED SCHOOLOGY ASSOCIATIONS\n\nstudent_email,parent_email\n"
+    for f in failed:
+        s = str(f).replace("{","").replace("}","")
+        s = s + "\n"
+        message = message + s
 
+    # send failed log email to admin
+    mailer = pymail()
+    mailer.create_message("******@******","FALED SCHOOLOGY ASSOCIATIONS",message)
+    mailer.send_message()
+
+    
 # one time call to create an association according to student and parent email
 def manual_association(student_email,parent_email):
     users = get_users()
