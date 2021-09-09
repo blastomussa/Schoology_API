@@ -195,7 +195,8 @@ def delete_inactiveParents():
 def associate():
     time.sleep(1)
     users = get_users()
-
+    
+    failed = []
     with open(EXPORT, newline='', encoding="ISO-8859-1") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
