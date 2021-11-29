@@ -212,7 +212,7 @@ def associate():
                 failed.append(d)
             time.sleep(1)
 
-    message = "FALED SCHOOLOGY ASSOCIATIONS\n\nstudent_email,parent_email\n"
+    message = "FAILED SCHOOLOGY ASSOCIATIONS\n\nstudent_email,parent_email\n"
     for f in failed:
         s = str(f).replace("{","").replace("}","")
         s = s + "\n"
@@ -220,7 +220,7 @@ def associate():
 
     # send failed log email to admin
     mailer = pymail()
-    mailer.create_message("******@******","FALED SCHOOLOGY ASSOCIATIONS",message)
+    mailer.create_message("******@******","FAILED SCHOOLOGY ASSOCIATIONS",message)
     mailer.send_message()
 
     
