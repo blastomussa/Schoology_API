@@ -21,9 +21,9 @@ class MainApplication(tk.Frame):
 
     def configure_gui(self):
             self.master.title("Schoology API App")
-            self.master.geometry("500x500")
-            self.master.resizable(False, False)
+            self.master.grid_columnconfigure(0, weight=1)
 
+    # REFINE
     def create_widgets(self):
         # Entry Variables
         self.fname = tk.StringVar()
@@ -31,41 +31,89 @@ class MainApplication(tk.Frame):
         self.email = tk.StringVar()
         self.p_email = tk.StringVar()
         self.s_email = tk.StringVar()
+        self.status1 = tk.StringVar()
+        self.status2 = tk.StringVar()
+
+        frame0 = tk.Frame(self.master,relief='raised',bd=2)
+        frame0.grid(row=0,sticky='we')
+        frame1 = tk.Frame(self.master,relief='sunken',bd=2)
+        frame1.grid(row=1,sticky='we')
+        frame1.grid_columnconfigure(0, weight=1)
+        frame2 = tk.Frame(self.master,relief='sunken',bd=2)
+        frame2.grid(row=2,sticky='we')
+        frame2.grid_columnconfigure(0, weight=1)
+
+        tk.Label(frame0, text="Manually create parent accounts and associations.").grid(row=0,sticky='ew')
+
         # Parent first, last and email entry fields and labels
-        fname_label = tk.Label(self.master, text="First Name").grid(row=0,column=0)
-        fname_entry = tk.Entry(self.master).grid(row=0,column=1)
-        lname_label = tk.Label(self.master, text="Last Name").grid(row=1,column=0)
-        lname_entry = tk.Entry(self.master).grid(row=1,column=1)
-        email_label = tk.Label(self.master, text="Email").grid(row=2,column=0)
-        email_entry = tk.Entry(self.master,textvariable=self.email).grid(row=2,column=1)
+        tk.Label(frame1, text="First Name: ").grid(row=0,column=0,sticky='e')
+        tk.Entry(frame1, textvariable=self.fname).grid(row=0,column=1)
+        tk.Label(frame1, text="Last Name: ").grid(row=1,column=0,sticky='e')
+        tk.Entry(frame1, textvariable=self.lname).grid(row=1,column=1)
+        tk.Label(frame1, text="Email: ").grid(row=2,column=0,sticky='e')
+        tk.Entry(frame1, textvariable=self.email).grid(row=2,column=1)
         # create parent button
-        button1 = tk.Button(text='Create Parent', command=self.button1_click).grid(row=3,column=0)
+        tk.Button(frame1,text='Create Parent', command=self.button1_click).grid(row=3,columnspan=2)
+        # create status label
+        tk.Label(frame1, textvariable=self.status1).grid(row=4,columnspan=2)
         # NEED label with success or failure message
 
         # Student and parent email entry fields and labels
-        semail_label = tk.Label(self.master, text="Student Email").grid(row=5,column=0)
-        semail_entry = tk.Entry(self.master).grid(row=5,column=1)
-        pemail_label = tk.Label(self.master, text="Parent Email").grid(row=6,column=0)
-        pemail_entry = tk.Entry(self.master,textvariable=self.p_email).grid(row=6,column=1)
+        tk.Label(frame2, text="Student Email: ").grid(row=5,column=0,sticky='e')
+        tk.Entry(frame2, textvariable=self.s_email).grid(row=5,column=1)
+        tk.Label(frame2, text="Parent Email: ").grid(row=6,column=0,sticky='e')
+        tk.Entry(frame2, textvariable=self.p_email).grid(row=6,column=1)
         # create parent association button
-        button2 = tk.Button(text='Create Association', command=self.button2_click).grid(row=7,column=0)
-        # NEED label with success or failure message
+        tk.Button(frame2,text='Create Association', command=self.button2_click).grid(row=7,column=0,sticky='ew')
+        tk.Button(frame2,text='Delete Association', command=self.button2_click).grid(row=7,column=1,sticky='ew')
+        tk.Label(frame2, textvariable=self.status2).grid(row=8,columnspan=2)
 
 
+    # REFINE
     def button1_click(self):
-        fname = self.fname.get()
-        lname = self.lname.get()
-        email = self.email.get()
+        fname = str(self.fname.get())
+        lname = str(self.lname.get())
+        email = str(self.email.get())
+        self.fname.set('')
+        self.lname.set('')
+        self.email.set('')
         response = self.pylogy.create_parent(fname,lname,email)
-        if(response.status_code==200):
-            pass # success message
+        if(response.status_code==201):
+            self.status1.set("Successfully created: {0}".format(email))
         else:
-            pass # error message
+            self.status1.set(response.json())
 
+    # REFINE
     def button2_click(self):
-        print(self.p_email.get())
+        s_email = str(self.s_email.get())
+        p_email = str(self.p_email.get())
+        self.s_email.set('')
+        self.p_email.set('')
+        s_id = self.pylogy.get_user_id(s_email)
+        p_id = self.pylogy.get_user_id(p_email)
+        response = self.pylogy.create_parent_association(s_id,p_id)
+        if(response.status_code==201):
+            self.status2.set("Successfully created parent association")
+        else:
+            x = response.json()
+            y = x['association'][0]
+            self.status2.set(y['message'])
 
-    # methods that take user input,calls schoology api and displays messages
+    # REFINE
+    def button3_click(self):
+        s_email = str(self.s_email.get())
+        p_email = str(self.p_email.get())
+        self.s_email.set('')
+        self.p_email.set('')
+        s_id = self.pylogy.get_user_id(s_email)
+        p_id = self.pylogy.get_user_id(p_email)
+        response = self.pylogy.delete_parent_association(s_id,p_id)
+        if(response.status_code==201):
+            self.status2.set("Successfully deleted parent association")
+        else:
+            x = response.json()
+            y = x['association'][0]
+            self.status2.set(y['message'])
 
 if __name__ == '__main__':
    root = tk.Tk()
