@@ -1,9 +1,8 @@
 #Author: Blastomussa
 #Date: 1/7/22
-from requests_oauthlib import OAuth1
-import requests
 import secrets
-import time
+import requests
+from requests_oauthlib import OAuth1
 
 class Pylogy:
     def __init__(self,api_key,secret):
@@ -27,6 +26,14 @@ class Pylogy:
         headeroauth = OAuth1(self.api_key,self.secret,signature_method='PLAINTEXT')
         return requests.delete(uri, auth=headeroauth)
 
+    def error_check(self,response):
+        code = response.status_code
+        if(code>=200 and code<300):
+            return
+        elif(code>=400):
+            print('{0} error'.format(code))
+            return
+
     # Schoology API calls
     def view_user(self,id):
         uri = 'https://api.schoology.com/v1/users/{0}'.format(id)
@@ -36,7 +43,7 @@ class Pylogy:
         uri = 'https://api.schoology.com/v1/users/{0}?email_notification=0'.format(id)
         return self._delete(uri)
 
-    def get_user_id(self):
+    def get_user_id(self,email):
         pass
 
     def get_users(self):
@@ -48,6 +55,7 @@ class Pylogy:
         return self._post(uri,user)
 
     def create_parent_association(self, student_suid, parent_suid):
+        uri = 'https://api.schoology.com/v1/users/import/associations/parents'
         association = {
             'associations':  {
                 'association': {
@@ -56,9 +64,10 @@ class Pylogy:
                 }
             }
         }
-        pass
+        return self._post(uri,association)
 
     def delete_parent_association(self, student_suid, parent_suid):
+        uri = 'https://api.schoology.com/v1/users/import/associations/parents'
         association = {
             'associations':  {
                 'association': {
@@ -68,8 +77,7 @@ class Pylogy:
                 }
             }
         }
-        pass
-
+        return self._post(uri,association)
 
     # Author specific class methods
     def create_parent(self, fname, lname, email):
