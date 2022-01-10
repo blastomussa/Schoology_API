@@ -18,6 +18,12 @@ class MainApplication(tk.Frame):
 
     def schoology_init(self):
         self.pylogy = Pylogy(API_KEY,SECRET)
+        code = self.pylogy.get_users().status_code
+        if(code==200):
+            self.api_status.set('API Status: Connected')
+        else:
+            self.api_status.set('API Status: {0} Error'.format(code))
+
 
     def configure_gui(self):
             self.master.title("Schoology API App")
@@ -33,17 +39,21 @@ class MainApplication(tk.Frame):
         self.s_email = tk.StringVar()
         self.status1 = tk.StringVar()
         self.status2 = tk.StringVar()
+        self.api_status = tk.StringVar()
 
-        frame0 = tk.Frame(self.master,relief='raised',bd=2)
+        frame0 = tk.Frame(self.master)
         frame0.grid(row=0,sticky='we')
-        frame1 = tk.Frame(self.master,relief='sunken',bd=2)
+        frame1 = tk.Frame(self.master,relief='groove',bd=1)
         frame1.grid(row=1,sticky='we')
         frame1.grid_columnconfigure(0, weight=1)
-        frame2 = tk.Frame(self.master,relief='sunken',bd=2)
+        frame2 = tk.Frame(self.master,relief='groove',bd=1)
         frame2.grid(row=2,sticky='we')
         frame2.grid_columnconfigure(0, weight=1)
+        frame3 = tk.Frame(self.master)
+        frame3.grid(row=3,sticky='we')
+        frame3.grid_columnconfigure(0, weight=1)
 
-        tk.Label(frame0, text="Manually create parent accounts and associations.").grid(row=0,sticky='ew')
+        tk.Label(frame0, text="Create Parent Accounts and Associations", font='-weight bold').grid(row=0,columnspan=2)
 
         # Parent first, last and email entry fields and labels
         tk.Label(frame1, text="First Name: ").grid(row=0,column=0,sticky='e')
@@ -67,6 +77,9 @@ class MainApplication(tk.Frame):
         tk.Button(frame2,text='Create Association', command=self.button2_click).grid(row=7,column=0,sticky='ew')
         tk.Button(frame2,text='Delete Association', command=self.button2_click).grid(row=7,column=1,sticky='ew')
         tk.Label(frame2, textvariable=self.status2).grid(row=8,columnspan=2)
+
+        # API status label
+        tk.Label(frame3, textvariable=self.api_status, font='-size 10').grid(row=0,sticky='w')
 
 
     # REFINE
@@ -114,6 +127,8 @@ class MainApplication(tk.Frame):
             x = response.json()
             y = x['association'][0]
             self.status2.set(y['message'])
+
+    # methods that take user input,calls schoology api and displays messages
 
 if __name__ == '__main__':
    root = tk.Tk()
