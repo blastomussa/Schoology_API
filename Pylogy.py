@@ -26,29 +26,44 @@ class Pylogy:
         headeroauth = OAuth1(self.api_key,self.secret,signature_method='PLAINTEXT')
         return requests.delete(uri, auth=headeroauth)
 
-    def error_check(self,response):
-        code = response.status_code
-        if(code>=200 and code<300):
-            return
-        elif(code>=400):
-            print('{0} error'.format(code))
-            return
 
     # Schoology API calls
     def view_user(self,id):
         uri = 'https://api.schoology.com/v1/users/{0}'.format(id)
         return self._get(uri)
 
+
     def delete_user(self,id):
         uri = 'https://api.schoology.com/v1/users/{0}?email_notification=0'.format(id)
         return self._delete(uri)
 
-    def get_user_id(self,email):
-        pass
 
-    def get_users(self):
-        uri = 'https://api.schoology.com/v1/users'
-        return self._get(uri)
+    def get_user_id(self,email,users=None):
+        if(not users): users = self.list_users()
+        for user in users:
+            if(user['primary_email'] == email): return user['id']
+        return "No Schoology ID found for: {}".format(email)
+
+
+    def list_users(self,role_id=None):
+        uri = 'https://api.schoology.com/v1/users?limit=150'
+        if(role_id): uri += "&role_ids={}".format(role_id)
+        response = self._get(uri).json()
+        if('do not exist' not in response):
+            users = response['user']
+            links = response['links']
+            try:
+                while(links['next'] != ''):
+                    uri = links['next']
+                    response = self._get(uri).json()
+                    links = response['links']
+                    u = response['user']
+                    users += u # append paginated results to users json
+            except KeyError: pass   # no next page will throw KeyError
+            return users
+        else:
+            return "Role {} does not exist.".format(role_id)
+
 
     def create_user(self, user):
         uri = 'https://api.schoology.com/v1/users'
@@ -86,7 +101,7 @@ class Pylogy:
 
         # cleanup text
         s = school_uid.replace(" ","") #no spaces in school_uid
-        school_uid = s.encode(encoding="ascii",errors="ignore").decode() #only ascii char in suid
+        school_uid = s.encode(encoding="ascii",errors="ignore").decode() #only ascii chars
         email = email.lower() #only lowercase chars emails
 
         # create and return new user json
