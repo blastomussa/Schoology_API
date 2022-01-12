@@ -18,11 +18,14 @@ class MainApplication(tk.Frame):
 
     def schoology_init(self):
         self.pylogy = Pylogy(API_KEY,SECRET)
-        code = self.pylogy.get_users().status_code
-        if(code==200):
+        # arbitrary get call to check status code to determine API status
+        try:
+            self.pylogy.view_user(1)
             self.api_status.set('API Status: Connected')
-        else:
-            self.api_status.set('API Status: {0} Error'.format(code))
+            self.retry_connection.grid_remove()
+        except requests.exceptions.ConnectionError:
+            self.api_status.set('API Status: Check Network Connection...')
+            self.retry_connection.grid(row=0,column=1,sticky='w')
 
 
     def configure_gui(self):
@@ -80,6 +83,7 @@ class MainApplication(tk.Frame):
 
         # API status label
         tk.Label(frame3, textvariable=self.api_status, font='-size 10').grid(row=0,sticky='w')
+        self.retry_connection = tk.Button(frame3, text='Retry', font='-size 10', command=self.schoology_init)
 
 
     # REFINE
@@ -96,7 +100,7 @@ class MainApplication(tk.Frame):
         else:
             self.status1.set(response.json())
 
-    # REFINE
+    # REFINE; takes too long 
     def button2_click(self):
         s_email = str(self.s_email.get())
         p_email = str(self.p_email.get())
@@ -112,7 +116,7 @@ class MainApplication(tk.Frame):
             y = x['association'][0]
             self.status2.set(y['message'])
 
-    # REFINE
+    # REFINE; takes too long
     def button3_click(self):
         s_email = str(self.s_email.get())
         p_email = str(self.p_email.get())
@@ -127,8 +131,6 @@ class MainApplication(tk.Frame):
             x = response.json()
             y = x['association'][0]
             self.status2.set(y['message'])
-
-    # methods that take user input,calls schoology api and displays messages
 
 if __name__ == '__main__':
    root = tk.Tk()
