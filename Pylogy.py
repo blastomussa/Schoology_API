@@ -1,8 +1,9 @@
 #Author: Blastomussa
 #Date: 1/7/22
 import secrets
-import requests
-from requests_oauthlib import OAuth1
+import requests #pip3 install requests
+import configparser #for test runs
+from requests_oauthlib import OAuth1 #pip3 install requests_oauthlib
 
 class Pylogy:
     def __init__(self,api_key,secret):
@@ -45,6 +46,13 @@ class Pylogy:
         return "No Schoology ID found for: {}".format(email)
 
 
+    def get_school_uid(self,email,users=None):
+        if(not users): users = self.list_users()
+        for user in users:
+            if(user['primary_email'] == email): return user['school_uid']
+        return "No Schoology ID found for: {}".format(email)
+
+
     def list_users(self,role_id=None):
         uri = 'https://api.schoology.com/v1/users?limit=150'
         if(role_id): uri += "&role_ids={}".format(role_id)
@@ -69,7 +77,7 @@ class Pylogy:
         uri = 'https://api.schoology.com/v1/users'
         return self._post(uri,user)
 
-    def create_parent_association(self, student_suid, parent_suid):
+    def create_association(self, student_suid, parent_suid):
         uri = 'https://api.schoology.com/v1/users/import/associations/parents'
         association = {
             'associations':  {
@@ -81,7 +89,7 @@ class Pylogy:
         }
         return self._post(uri,association)
 
-    def delete_parent_association(self, student_suid, parent_suid):
+    def delete_association(self, student_suid, parent_suid):
         uri = 'https://api.schoology.com/v1/users/import/associations/parents'
         association = {
             'associations':  {
@@ -117,3 +125,28 @@ class Pylogy:
             'update_existing': 1                #NEEDED
         }
         return self.create_user(user)
+
+
+
+def test():
+    # Get API key and secret from config file
+    try:
+        config = configparser.ConfigParser()
+        config.read('config.ini')
+        API_KEY = config['SCHOOLOGY_CLIENT']['API_KEY']
+        SECRET = config['SCHOOLOGY_CLIENT']['SECRET']
+    except configparser.Error:
+        print("Configuration Error...config.ini not found")
+        exit()
+    except KeyError:
+        print("Configuration Error...config not found")
+        exit()
+
+    URI = 'https://api.schoology.com/v1/users'
+
+    #initialize Pylogy
+    pylogy = Pylogy(API_KEY,SECRET)
+
+
+if __name__ == '__main__':
+    test()
